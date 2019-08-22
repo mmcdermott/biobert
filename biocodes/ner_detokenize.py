@@ -35,7 +35,7 @@ def detokenize(golden_path, pred_token_test_path, pred_label_test_path, output_d
                 continue
             tmp = line.split()
             ans['toks'].append(tmp[0])
-            ans['labels'].append(tmp[1])
+            ans['labels'].append(tmp[-1])
     # len(ans['labels'])=ans['toks']-lineNoCount
     
     # read predicted
@@ -57,11 +57,13 @@ def detokenize(golden_path, pred_token_test_path, pred_label_test_path, output_d
         print("Error! : len(pred['toks']) != len(pred['labels']) : Please report us")
         raise
     
+    had_to_merge = 0
     bert_pred = dict({'toks':[], 'labels':[]})
     for t, l in zip(pred['toks'],pred['labels']):
         if t in ['[CLS]','[SEP]']: # non-text tokens will not be evaluated.
             continue
         elif t[:2] == '##': # if it is a piece of a word (broken by Word Piece tokenizer)
+            had_to_merge += 1
             bert_pred['toks'][-1] = bert_pred['toks'][-1]+t[2:] # append pieces
         else:
             bert_pred['toks'].append(t)
@@ -72,6 +74,7 @@ def detokenize(golden_path, pred_token_test_path, pred_label_test_path, output_d
         raise
    
     if (len(ans['labels']) != len(bert_pred['labels'])): # Sanity check
+        print(had_to_merge)
         print(len(ans['labels']), len(bert_pred['labels']))
         print("Error! : len(ans['labels']) != len(bert_pred['labels']) : Please report us")
         raise
